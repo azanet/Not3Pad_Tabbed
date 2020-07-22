@@ -5,11 +5,11 @@
  */
 package Controlador;
 
+import Modelo.Imprimir;
 import Modelo.MetodosPrincipal;
 import Vistas.PanelMenuBar;
 import Vistas.PanelTextArea;
 import Vistas.Panel_Pestanias;
-
 import Vistas.VistaPrincipal;
 import static Vistas.VistaPrincipal.panelBase;
 import java.awt.BorderLayout;
@@ -22,17 +22,19 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import static java.awt.image.ImageObserver.HEIGHT;
+import java.awt.print.PrinterException;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JColorChooser;
 import javax.swing.JOptionPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.text.Caret;
 
 /**
  *
@@ -137,6 +139,7 @@ public class ControladorVistaPrincipal {
         panelMenuBar.edicion.setEnabled(false);
         panelMenuBar.imprimir.setEnabled(false);
         panelMenuBar.personalizar.setEnabled(false);
+        panelMenuBar.mode.setEnabled(false);
         panelMenuBar.comboBox.setEnabled(false);
         panelMenuBar.comboBoxStyle.setEnabled(false);
 
@@ -333,7 +336,7 @@ public class ControladorVistaPrincipal {
             }//FIn del IF
 
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Se produjo un error", "ERROR", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(Panel_Pestanias.TP, "Se produjo un error", "ERROR", JOptionPane.ERROR_MESSAGE);
     }//Find el TryCatch
               
             
@@ -347,8 +350,16 @@ public class ControladorVistaPrincipal {
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
              String texto = panelTA.textArea.getText();
-            panelTA.fichero = metodosPrincipal.Guardar(panelTA.fichero, texto);
-
+            try{
+             panelTA.fichero = metodosPrincipal.Guardar(panelTA.fichero, texto);
+             JOptionPane.showMessageDialog(panelTA.textArea, "El ARCHIVO fue GUARDADO con Éxito", "Archivo Guardado", JOptionPane.INFORMATION_MESSAGE);
+        
+            }catch(Exception e){
+            JOptionPane.showMessageDialog(panelTA.textArea, "El ARCHIVO NO fue guardado ", "ERROR", JOptionPane.INFORMATION_MESSAGE);
+           
+            }
+             
+             
             
         }//Fin action performed
     }//Fin del OyenteGUARDAR
@@ -363,11 +374,21 @@ public class ControladorVistaPrincipal {
 
         try {
              panelTA.fichero = metodosPrincipal.GuardarComo( panelTA.fichero, texto);
+                //Cambiamos el nombre de la pestaña y configuramos para establecerle el icono y el oyente para que cierre correctamente
+           panelPestanias.TP.setTitleAt(indexPestana, panelTA.fichero.getName());
+            panelPestanias.TP.setTabComponentAt(indexPestana, new Panel_Pestanias.Cross(panelTA.fichero.getName())); //agrega titulo y boton X.
+            JOptionPane.showMessageDialog(Panel_Pestanias.TP, "El ARCHIVO fue GUARDADO con Éxito", "Archivo Guardado", JOptionPane.INFORMATION_MESSAGE);
+           
+             
+             
         } catch (IOException ex) {
              JOptionPane.showMessageDialog(panelTA.textArea, "Se produjo un error", "ERROR", JOptionPane.ERROR_MESSAGE);
    
-        }
+        }catch (ArithmeticException a) {
+               JOptionPane.showMessageDialog(panelTA.textArea, "El ARCHIVO NO fue guardado ", "Archivo NO Guardado", JOptionPane.CANCEL_OPTION);
         
+        }
+         
         }//Fin action performed
     }//Fin del OyenteGUARDAR_COMO
 
@@ -382,35 +403,24 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-        String nombre_fichero = "";
-        //Capturamos el INDEX Actual de nuestra pestaña, para poder configurarla seguidamente
-   //         int indexPestana= panelPestanias.TP.indexOfTab(panelPestanias.TP);
-         try {
-            try{
-                  nombre_fichero = JOptionPane.showInputDialog(null, "Introduzca NOMBRE para Archivo:", "Introduzca Nombre", JOptionPane.QUESTION_MESSAGE);
-       
-            }catch (HeadlessException e){
-                e.getMessage();
-            }
-          
-            if(nombre_fichero!=null){
-             //creamos el objeto File, con el nombre   que queremos ponerle a nuestro Archivo. y luego renombraremos nuestro archivo al nombre de este que hemos creado   
-              File fichero_rename = new File(nombre_fichero);
+
+            try {
+    
+  
              String texto = panelTA.textArea.getText(); //Recogemos el texto del archivo que hay en el textarea
-            fichero_rename = metodosPrincipal.Guardar(fichero_rename, texto); //Y creamos el archivo con el nombre nuevo pasandole el TEXTOcontenido del archivo que existia antes
-                
+         
             //Este metodo. integrado en el objeto PanelTextArea, elimina el archivo existente y abre el archivo creado anteriormente  
-            panelTA.cambiarNombre(fichero_rename.getPath()); //Renombramos el fichero (mas bien vamos a crear uno nuevo)
+            panelTA.cambiarNombre(metodosPrincipal.Renombrar(texto)); //Renombramos el fichero (mas bien vamos a crear uno nuevo)
             //Cambiamos el nombre de la pestaña y configuramos para establecerle el icono y el oyente para que cierre correctamente
             panelPestanias.TP.setTitleAt(indexPestana, panelTA.fichero.getName());
             panelPestanias.TP.setTabComponentAt(indexPestana, new Panel_Pestanias.Cross(panelTA.fichero.getName())); //agrega titulo y boton X.
-          
-            
-            }
-     
+            JOptionPane.showMessageDialog(panelTA.textArea, "El ARCHIVO fue RENOMBRADO con Éxito", "Archivo Renombrado", JOptionPane.INFORMATION_MESSAGE);
+         
         } catch (HeadlessException e) {
             e.getMessage();
-        }  
+        } catch (ArithmeticException e) {
+             JOptionPane.showMessageDialog(panelTA.textArea, "Operación CANCELADA", "OPERACIÓN CANCELADA", JOptionPane.CANCEL_OPTION);
+        } //Fin del try-Catch
             
         }//Fin action performed
     }//Fin del OyenteRENOMBRAR
@@ -422,7 +432,25 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+       try{      
+        String linea = JOptionPane.showInputDialog(panelTA.textArea, "Introduzca Nº de linea:", "Introduzca Nº Linea", JOptionPane.QUESTION_MESSAGE);
+        
+        if (linea != null){
+        int index = metodosPrincipal.getLineStartIndex(panelTA.textArea, Integer.parseInt(linea));
+        panelTA.textArea.setCaretPosition(index);
+        
+        }else{
+             JOptionPane.showMessageDialog(panelTA.textArea, "Operación CANCELADA", "OPERACIÓN CANCELADA", JOptionPane.CANCEL_OPTION);
+    
+        }
+        
+        }catch (HeadlessException | NumberFormatException e){
+            JOptionPane.showMessageDialog(panelTA.textArea, "Introduzca solo Números", "ERROR de Entrada", JOptionPane.ERROR_MESSAGE);
+    
+        }catch (Exception e){
+             JOptionPane.showMessageDialog(panelTA.textArea, "La LINEA indicada NO EXISTE.", "ERROR de Nº de LINEA ", JOptionPane.ERROR_MESSAGE);
+    
+        }
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -432,7 +460,8 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            if(panelTA.manager.canUndo())
+                panelTA.manager.undo();
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -442,7 +471,8 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            if(panelTA.manager.canRedo())
+                panelTA.manager.redo();
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -452,7 +482,7 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            panelTA.textArea.copy();
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -462,7 +492,7 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            panelTA.textArea.paste();
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -472,7 +502,7 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            panelTA.textArea.cut();
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -483,6 +513,7 @@ public class ControladorVistaPrincipal {
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
 
+        panelTA.textArea.append(String.valueOf(metodosPrincipal.InsertarFecha()));
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -492,7 +523,29 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
+            try{
+        String textoInicialDeBusqueda = panelTA.textArea.getSelectedText();
+        if (textoInicialDeBusqueda == null) {
+            textoInicialDeBusqueda = "";
+        }
+        String textoABuscar = JOptionPane.showInputDialog( panelTA.textArea, "Texto a buscar", textoInicialDeBusqueda);
+        Caret seleccion =  panelTA.textArea.getCaret();
 
+        int posicionInicial = 0;
+        if (seleccion.getDot() != seleccion.getMark()) {
+            // Hay algo seleccionado
+            posicionInicial = seleccion.getDot();
+        }
+
+        String textoTotal =  panelTA.textArea.getText();
+        int posicion = textoTotal.indexOf(textoABuscar, posicionInicial);
+         panelTA.textArea.setCaretPosition(posicion);
+         panelTA.textArea.moveCaretPosition(posicion);
+            }catch(Exception e){
+             JOptionPane.showMessageDialog(panelTA.textArea, "No se encuentra la PALABRA Indicada.", "ERROR de Busqueda ", JOptionPane.ERROR_MESSAGE);
+    
+            
+            }
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -502,7 +555,43 @@ public class ControladorVistaPrincipal {
         @Override
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
+try{
+         String textoInicialDeBusqueda = panelTA.textArea.getSelectedText();
+        if (textoInicialDeBusqueda == null) {
+            textoInicialDeBusqueda = "";
+        }
+        
+        //Solicitamos laas palabras a buscar y reemplazar, en caso de cancelacion saldrá por la excepción
+        String textoABuscar = JOptionPane.showInputDialog(panelTA.textArea, "Texto a buscar", textoInicialDeBusqueda);
+         if(textoABuscar==null){
+            throw new ArithmeticException();
+        }
+        String textoNuevo = JOptionPane.showInputDialog(panelTA.textArea, "Texto NUEVO", textoInicialDeBusqueda);
+        if(textoNuevo == null){
+            throw new ArithmeticException();
+        }
+        
+        
+        Caret seleccion = panelTA.textArea.getCaret();
 
+        int posicionInicial = 0;
+        if (seleccion.getDot() != seleccion.getMark()) {
+            // Hay algo seleccionado
+            posicionInicial = seleccion.getDot();
+        }
+
+        String textoTotal = panelTA.textArea.getText();
+        int posicion = textoTotal.indexOf(textoABuscar, posicionInicial);
+       
+           panelTA.textArea.replaceRange(textoNuevo, posicion, posicion + textoABuscar.length());
+           
+}catch(ArithmeticException e){
+      JOptionPane.showMessageDialog(panelTA.textArea, "Operación Cancelada", "OPERACIÓN CANCELADA ", JOptionPane.CANCEL_OPTION);
+    
+}catch(Exception e){
+      JOptionPane.showMessageDialog(panelTA.textArea, "No se encuentra la palabra buscada", "ERROR ", JOptionPane.CANCEL_OPTION);
+    
+}
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -511,8 +600,13 @@ public class ControladorVistaPrincipal {
 
         @Override
         public void actionPerformed(ActionEvent ae) {
-            //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
-
+            try {
+                //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
+                panelTA.textArea.print();
+            } catch (PrinterException ex) {
+                JOptionPane.showMessageDialog(panelTA.textArea, "Se ha producido un error con la Impresión.", "ERROR de Impresión ", JOptionPane.ERROR_MESSAGE);
+    
+            }
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -523,6 +617,31 @@ public class ControladorVistaPrincipal {
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
 
+                 try {
+            
+            String nombre_fichero = "TMP_PRINT";
+            //Creando Fichero TEMPORAL para mandar a Imprimir
+            File fich_print = new File(nombre_fichero);
+            
+            fich_print.delete();
+             System.gc();
+            fich_print.createNewFile();
+            try (    //Crea un flujo de caracteres para grabar
+                    FileWriter flujo = new FileWriter(fich_print) //Podriamos dejarle true para que seguiera escribiendo debajo de este si existiera, (aunqeu lo estoy eliminando mas arriba pòrque no es el caso)
+                     ;PrintWriter escritor = new PrintWriter(flujo)) {
+                //Grabamos el archivo temporal con el contenido del JTextArea
+                escritor.println(panelTA.textArea.getText());
+            }
+            //imprimir es un objeto de Imprimir y está ya declarado en esta clase
+            Imprimir imprimir = new Imprimir(nombre_fichero);//Inicializamos el objeto enviandole el nombre del archivo, y se irá a la cola de impresión
+            //Borramos el archivo Temporal de Impresión
+            fich_print.delete();
+            System.gc();
+
+        } catch (IOException e) {
+
+        }
+            
         }//Fin action performed
     }//Fin del OyenteCOPIAR
 
@@ -533,7 +652,7 @@ public class ControladorVistaPrincipal {
         public void actionPerformed(ActionEvent ae) {
             //ESCRIBIR CÓDIGO DEL BOTÓN AQUÍ
              Image icono = new ImageIcon(getClass().getResource("/Images/LogoKrazyLab.png")).getImage();
-             JOptionPane.showMessageDialog(null, "Aplicación simple de Bloc de Notas.\n\nRealiza las acciones normales\nque realizaría un Bloc de Notas\nincluyendo sus atajos.\n\n\nAutor: David Freyre Muñoz  2020", "Acerca de", HEIGHT,  new ImageIcon(icono));
+             JOptionPane.showMessageDialog(Panel_Pestanias.TP, "Aplicación simple de Bloc de Notas.\n\nRealiza las acciones normales\nque realizaría un Bloc de Notas\nincluyendo sus atajos.\n\n\nAutor: David Freyre Muñoz  2020", "Acerca de", HEIGHT,  new ImageIcon(icono));
 
         }//Fin action performed
     }//Fin del OyenteCOPIAR
